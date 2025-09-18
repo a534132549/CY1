@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黄金挖矿游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f1c40f;
+        }
+
+        .timer {
+            font-size: 20px;
+            color: #e74c3c;
+        }
+
+        .energy-bar {
+            width: 200px;
+            height: 20px;
+            background: #34495e;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #95a5a6;
+        }
+
+        .energy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c, #f39c12, #2ecc71);
+            transition: width 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .game-area {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(180deg, #87ceeb 0%, #8b4513 30%, #654321 100%);
+            overflow: hidden;
+        }
+
+        .miner {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: #f39c12;
+            border-radius: 50%;
+            border: 3px solid #e67e22;
+            z-index: 50;
+        }
+
+        .miner::before {
+            content: "⛏️";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+        }
+
+        .drill-line {
+            position: absolute;
+            top: 120px;
+            left: 50%;
+            width: 4px;
+            height: 0;
+            background: #95a5a6;
+            transform-origin: top center;
+            transition: all 0.1s linear;
+            z-index: 40;
+        }
+
+        .drill-hook {
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 15px;
+            background: #7f8c8d;
+            border-radius: 50%;
+            border: 2px solid #95a5a6;
+        }
+
+        .treasure {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            z-index: 30;
+        }
+
+        .treasure:hover {
+            transform: scale(1.1);
+        }
+
+        .gold {
+            background: linear-gradient(45deg, #f1c40f, #f39c12);
+            border: 2px solid #e67e22;
+        }
+
+        .gold::before {
+            content: "💰";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+        }
+
+        .diamond {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border: 2px solid #1abc9c;
+        }
+
+        .diamond::before {
+            content: "💎";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+        }
+
+        .stone {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+            border: 2px solid #34495e;
+        }
+
+        .stone::before {
+            content: "🪨";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 100;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 3px solid #f1c40f;
+        }
+
+        .game-over h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #f1c40f;
+        }
+
+        .final-score {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: #ecf0f1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #f1c40f;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle-float 2s ease-out forwards;
+        }
+
+        @keyframes particle-float {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(0);
+            }
+        }
+
+        .rotating {
+            animation: rotate 2s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <div class="score">金币: <span id="score">0</span></div>
+            <div class="timer">时间: <span id="timer">60</span>s</div>
+            <div class="energy-bar">
+                <div class="energy-fill" id="energy"></div>
+            </div>
+        </div>
+
+        <div class="game-area" id="gameArea">
+            <div class="miner" id="miner"></div>
+            <div class="drill-line" id="drillLine">
+                <div class="drill-hook" id="drillHook"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="drillBtn">挖掘 (空格)</button>
+            <button class="btn" id="pauseBtn">暂停</button>
+            <button class="btn" id="restartBtn">重新开始</button>
+        </div>
+
+        <div class="game-over" id="gameOver">
+            <div class="game-over-content">
+                <h2>游戏结束!</h2>
+                <div class="final-score">最终分数: <span id="finalScore">0</span></div>
+                <button class="btn" onclick="restartGame()">再玩一次</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class GoldMinerGame {
+            constructor() {
+                this.score = 0;
+                this.timeLeft = 60;
+                this.energy = 100;
+                this.isGameRunning = false;
+                this.isPaused = false;
+                this.isDrilling = false;
+                this.drillAngle = 0;
+                this.drillDirection = 1;
+                this.drillLength = 0;
+                this.maxDrillLength = 500;
+                this.treasures = [];
+                this.particles = [];
+
+                this.gameArea = document.getElementById('gameArea');
+                this.drillLine = document.getElementById('drillLine');
+                this.drillHook = document.getElementById('drillHook');
+                this.miner = document.getElementById('miner');
+
+                this.initEventListeners();
+                this.generateTreasures();
+                this.startGame();
+            }
+
+            initEventListeners() {
+                document.getElementById('drillBtn').addEventListener('click', () => this.startDrill());
+                document.getElementById('pauseBtn').addEventListener('click', () => this.togglePause());
+                document.getElementById('restartBtn').addEventListener('click', () => this.restartGame());
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        this.startDrill();
+                    }
+                });
+            }
+
+            generateTreasures() {
+                this.treasures = [];
+                const treasureTypes = [
+                    { type: 'gold', value: 50, weight: 3, rarity: 0.4 },
+                    { type: 'diamond', value: 200, weight: 2, rarity: 0.15 },
+                    { type: 'stone', value: 10, weight: 5, rarity: 0.45 }
+                ];
+
+                for (let i = 0; i < 25; i++) {
+                    const rand = Math.random();
+                    let treasureType;
+
+                    if (rand < 0.15) treasureType = treasureTypes[1]; // diamond
+                    else if (rand < 0.55) treasureType = treasureTypes[0]; // gold
+                    else treasureType = treasureTypes[2]; // stone
+
+                    const treasure = {
+                        id: i,
+                        type: treasureType.type,
+                        value: treasureType.value,
+                        weight: treasureType.weight,
+                        x: Math.random() * (this.gameArea.offsetWidth - 60) + 30,
+                        y: Math.random() * (this.gameArea.offsetHeight - 200) + 200,
+                        collected: false
+                    };
+
+                    this.treasures.push(treasure);
+                    this.createTreasureElement(treasure);
+                }
+            }
+
+            createTreasureElement(treasure) {
+                const treasureEl = document.createElement('div');
+                treasureEl.className = `treasure ${treasure.type}`;
+                treasureEl.id = `treasure-${treasure.id}`;
+                treasureEl.style.left = treasure.x + 'px';
+                treasureEl.style.top = treasure.y + 'px';
+
+                treasureEl.addEventListener('click', () => this.collectTreasure(treasure.id));
+
+                this.gameArea.appendChild(treasureEl);
+            }
+
+            startGame() {
+                this.isGameRunning = true;
+                this.gameLoop();
+                this.timer = setInterval(() => {
+                    if (!this.isPaused && this.isGameRunning) {
+                        this.timeLeft--;
+                        document.getElementById('timer').textContent = this.timeLeft;
+
+                        if (this.timeLeft <= 0) {
+                            this.endGame();
+                        }
+                    }
+                }, 1000);
+            }
+
+            gameLoop() {
+                if (!this.isGameRunning) return;
+
+                if (!this.isPaused) {
+                    this.updateDrill();
+                    this.updateEnergy();
+                }
+
+                requestAnimationFrame(() => this.gameLoop());
+            }
+
+            updateDrill() {
+                if (this.isDrilling) {
+                    if (this.drillLength === 0) {
+                        this.drillAngle += this.drillDirection * 2;
+                        if (this.drillAngle >= 45 || this.drillAngle <= -45) {
+                            this.drillDirection *= -1;
+                        }
+                        this.drillLine.style.transform = `translateX(-50%) rotate(${this.drillAngle}deg)`;
+                    } else {
+                        this.extendDrill();
+                    }
+                }
+            }
+
+            startDrill() {
+                if (this.isDrilling || this.energy < 10 || !this.isGameRunning || this.isPaused) return;
+
+                this.isDrilling = true;
+                this.energy -= 10;
+                this.drillLength = 0;
+                document.getElementById('drillBtn').disabled = true;
+
+                setTimeout(() => {
+                    this.extendDrill();
+                }, 500);
+            }
+
+            extendDrill() {
+                const speed = 3;
+                this.drillLength += speed;
+                this.drillLine.style.height = this.drillLength + 'px';
+
+                const hookPosition = this.getHookPosition();
+                this.checkTreasureCollision(hookPosition);
+
+                if (this.drillLength >= this.maxDrillLength) {
+                    this.retractDrill();
+                }
+            }
+
+            retractDrill() {
+                const retractInterval = setInterval(() => {
+                    this.drillLength -= 5;
+                    this.drillLine.style.height = Math.max(0, this.drillLength) + 'px';
+
+                    if (this.drillLength <= 0) {
+                        clearInterval(retractInterval);
+                        this.isDrilling = false;
+                        this.drillAngle = 0;
+                        this.drillLine.style.transform = 'translateX(-50%) rotate(0deg)';
+                        document.getElementById('drillBtn').disabled = false;
+                    }
+                }, 50);
+            }
+
+            getHookPosition() {
+                const minerRect = this.miner.getBoundingClientRect();
+                const gameAreaRect = this.gameArea.getBoundingClientRect();
+
+                const angle = this.drillAngle * Math.PI / 180;
+                const x = minerRect.left - gameAreaRect.left + minerRect.width / 2 + Math.sin(angle) * this.drillLength;
+                const y = minerRect.top - gameAreaRect.top + minerRect.height + this.drillLength * Math.cos(angle);
+
+                return { x, y };
+            }
+
+            checkTreasureCollision(hookPos) {
+                this.treasures.forEach(treasure => {
+                    if (treasure.collected) return;
+
+                    const distance = Math.sqrt(
+                        Math.pow(hookPos.x - (treasure.x + 20), 2) +
+                        Math.pow(hookPos.y - (treasure.y + 20), 2)
+                    );
+
+                    if (distance < 30) {
+                        this.collectTreasure(treasure.id);
+                    }
+                });
+            }
+
+            collectTreasure(treasureId) {
+                const treasure = this.treasures.find(t => t.id === treasureId);
+                if (!treasure || treasure.collected) return;
+
+                treasure.collected = true;
+                this.score += treasure.value;
+                document.getElementById('score').textContent = this.score;
+
+                const treasureEl = document.getElementById(`treasure-${treasureId}`);
+                if (treasureEl) {
+                    treasureEl.classList.add('rotating');
+                    this.createParticles(treasure.x + 20, treasure.y + 20);
+
+                    setTimeout(() => {
+                        treasureEl.remove();
+                    }, 500);
+                }
+
+                this.gameArea.classList.add('shake');
+                setTimeout(() => {
+                    this.gameArea.classList.remove('shake');
+                }, 500);
+
+                this.retractDrill();
+            }
+
+            createParticles(x, y) {
+                for (let i = 0; i < 8; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = x + Math.random() * 20 - 10 + 'px';
+                    particle.style.top = y + Math.random() * 20 - 10 + 'px';
+
+                    this.gameArea.appendChild(particle);
+
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 2000);
+                }
+            }
+
+            updateEnergy() {
+                if (this.energy < 100) {
+                    this.energy += 0.1;
+                }
+                document.getElementById('energy').style.width = this.energy + '%';
+            }
+
+            togglePause() {
+                this.isPaused = !this.isPaused;
+                document.getElementById('pauseBtn').textContent = this.isPaused ? '继续' : '暂停';
+            }
+
+            endGame() {
+                this.isGameRunning = false;
+                clearInterval(this.timer);
+                document.getElementById('finalScore').textContent = this.score;
+                document.getElementById('gameOver').style.display = 'flex';
+            }
+
+            restartGame() {
+                this.score = 0;
+                this.timeLeft = 60;
+                this.energy = 100;
+                this.isDrilling = false;
+                this.drillAngle = 0;
+                this.drillLength = 0;
+                this.isPaused = false;
+
+                document.getElementById('score').textContent = '0';
+                document.getElementById('timer').textContent = '60';
+                document.getElementById('energy').style.width = '100%';
+                document.getElementById('gameOver').style.display = 'none';
+                document.getElementById('pauseBtn').textContent = '暂停';
+                document.getElementById('drillBtn').disabled = false;
+
+                this.drillLine.style.height = '0px';
+                this.drillLine.style.transform = 'translateX(-50%) rotate(0deg)';
+
+                this.treasures.forEach(treasure => {
+                    const treasureEl = document.getElementById(`treasure-${treasure.id}`);
+                    if (treasureEl) treasureEl.remove();
+                });
+
+                this.generateTreasures();
+                this.startGame();
+            }
+        }
+
+        let game;
+
+        function restartGame() {
+            if (game) {
+                game.restartGame();
+            }
+        }
+
+        window.addEventListener('load', () => {
+            game = new GoldMinerGame();
+        });
+    </script>
+</body>
+</html>
