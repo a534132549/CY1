@@ -1,0 +1,32 @@
+# Windows系统文件
+NTUSER.DAT*
+ntuser.dat*
+ntuser.ini
+.gitconfig
+
+# Windows文件夹
+3D Objects/
+AppData/
+Contacts/
+Desktop/
+Downloads/
+Favorites/
+IntelGraphicsProfiles/
+Links/
+Music/
+OneDrive/
+Saved Games/
+Searches/
+Videos/
+WPS Cloud Files/
+WPSDrive/
+xwechat_files/
+
+# IDE和编辑器文件
+.vscode/
+.claude/
+.claude.json*
+
+# 临时文件
+*.tmp
+*.temp
